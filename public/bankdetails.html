@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bart - View Bank Data</title>
+
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .card {
+            margin: 10px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        #bankDataContainer, #bankList {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card-columns {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            flex: 1 1 30%;
+            max-width: 30%;
+            min-width: 250px;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                flex: 1 1 45%;
+                max-width: 45%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-dark text-white text-center py-4">
+        <h1>View Bank Data</h1>
+    </header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">Dashboard</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#generate-report">Generate Report</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Bank Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="bankdetails.html">View Bank Data</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="mt-5" id="generate-report">
+            <h2>Generate Report</h2>
+        </div>
+        <h4>Select a Bank to View Data</h4>
+        <div id="bankList"></div>
+
+        <h4 id = "viewdata1"class="mt-5">Bank Data</h4>
+        <h3 id="selectedBankName"></h3>
+        <div id="bankDataContainer"></div>
+
+        <div id="reportGenerationSection" style="display: none;">
+            <h5>Select Report Format for <span id="reportBankName"></span></h5>
+            <select id="reportFormat" class="form-select">
+                <option value="word">Word</option>
+            </select>
+            <button class="btn btn-success mt-2" id="generateReportBtn">Generate Report</button>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <!-- Custom JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchBanks();
+        });
+
+        function fetchBanks() {
+            fetch('/get-banks')
+                .then(response => response.json())
+                .then(banks => {
+                    const bankListDiv = document.getElementById('bankList');
+                    bankListDiv.innerHTML = banks.map(bank => `
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${bank.bankName}</h5>
+                                <p class="card-text">Branch: ${bank.branchName}</p>
+                                <p class="card-text">Location: ${bank.branchLocation}</p>
+                                <button class="btn" style="background-color: #007bff; color: white;" onclick="fetchBankData('${bank._id}', '${bank.bankName}')"><a href="#viewdata1" style="color: white; text-decoration: none;">View Data</a></button>
+                                <button class="btn" style="background-color: #007bff; color: white;" onclick="showReportSection('${bank._id}', '${bank.bankName}')"><a href="#generateReportBtn" style="color: white; text-decoration: none;">Generate Report</a></button>
+
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => console.error('Error fetching banks:', error));
+        }
+
+        function fetchBankData(bankId, bankName) {
+            fetch(`/getall-details?bankId=${bankId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(entries => {
+                    const bankDataContainer = document.getElementById('bankDataContainer');
+                    bankDataContainer.innerHTML = entries.map(entry => `
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Account No: ${entry.accountNo}</h5>
+                                <p class="card-text">Bank: ${entry.bank.bankName}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('selectedBankName').textContent = 'Bank Data for: ' + entries[0].bank.bankName; // Update title
+                })
+                .catch(error => console.error('Error fetching bank data:', error));
+        }
+
+        function showReportSection(bankId, bankName) {
+            document.getElementById('reportBankName').textContent = bankName;
+            document.getElementById('reportGenerationSection').style.display = 'block';
+            document.getElementById('generateReportBtn').onclick = () => generateReport(bankId, bankName);
+        }
+
+        function generateReport(bankId, bankName) {
+            const reportFormat = document.getElementById('reportFormat').value;
+
+            fetch(`/generate-report?bankId=${bankId}&format=${reportFormat}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to generate report');
+                    }
+                    return response.blob(); // Assuming the server sends a file blob
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Report_${bankName}.${reportFormat}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                })
+                .catch(error => console.error('Error generating report:', error));
+        }
+    </script>
+
+    <footer class="text-center mt-5">
+        <p class="text-muted">&copy; 2024 Bart. All rights reserved.</p>
+    </footer>
+</body>
+</html>

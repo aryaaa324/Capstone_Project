@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <header class="bg-dark text-white text-center py-4">
+        <h1>Data Dashboard</h1>
+    </header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">Dashboard</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#addDataForm">Create Entry</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#addQueryForm">Add Observation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#getDetailsForm">Get Bank Details</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#generate-report">Generate Report</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Bank Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="bankdetails.html">View Bank Data</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <br>
+        <form id="addDataForm" method="post" action="/create-entry">
+            <h2>Create Entry </h2>
+            <div class="form-group">
+                <label for="bankID">Bank ID</label>
+                <input type="text" class="form-control" id="bankID" required readonly>
+            </div>
+            <div class="form-group">
+                <label for="accountNo">Account Number</label>
+                <input type="text" class="form-control" id="accountNo" required>
+            </div>
+            <div class="form-group">
+                <label for="nameOfBorrower">Name of Borrower</label>
+                <input type="text" class="form-control" id="nameOfBorrower" required>
+            </div>
+            <div class="form-group">
+                <label for="dateOfSanctionRenewal">Date of Sanction/Renewal</label>
+                <input type="date" class="form-control" id="dateOfSanctionRenewal" required>
+            </div>
+            <div class="form-group">
+                <label for="sanctionedAmount">Sanctioned Amount</label>
+                <input type="number" class="form-control" id="sanctionedAmount" required>
+            </div>
+            <div class="form-group">
+                <label for="outstandingBalance">Outstanding Balance</label>
+                <input type="number" class="form-control" id="outstandingBalance" required>
+            </div>
+            <div class="form-group">
+                <label for="otherFacilities">Other Facilities</label>
+                <input type="text" class="form-control" id="otherFacilities">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Entry</button>
+        </form>
+
+        <form id="addQueryForm" class="mt-5">
+            <h2>Add Observation</h2>
+            <div class="form-group">
+                <label for="accountNoObservation">Account Number</label>
+                <input type="text" class="form-control" id="accountNoObservation" required>
+            </div>
+            <div class="form-group">
+                <label for="query">Query</label>
+                <input type="text" class="form-control" id="query" required>
+            </div>
+            <div class="form-group">
+                <label for="details">Details</label>
+                <textarea class="form-control" id="details"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="addQueryBtn">Add Query</button>
+        </form>
+
+        <form id="getDetailsForm" class="mt-5">
+            <h2>Get Bank Details</h2>
+            <div class="form-group">
+                <label for="accountNoToFetch">Account Number</label>
+                <input type="text" class="form-control" id="accountNoToFetch" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="getDetailsBtn">Get Details</button>
+        </form>
+
+        <div id="detailsOutput" class="mt-4"></div>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Autofill the Bank ID from the URL
+        document.addEventListener('DOMContentLoaded', () => {
+            const bankID = getUrlParameter('bankId'); // Adjust this parameter name if needed
+            console.log("Bank ID is " + bankID);
+            if (bankID) {
+                document.getElementById('bankID').value = bankID;
+            }
+        });
+
+        document.getElementById('addDataForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bankID = document.getElementById('bankID').value;
+            const accountNo = document.getElementById('accountNo').value;
+            const nameOfBorrower = document.getElementById('nameOfBorrower').value;
+            const dateOfSanctionRenewal = document.getElementById('dateOfSanctionRenewal').value;
+            const sanctionedAmount = document.getElementById('sanctionedAmount').value;
+            const outstandingBalance = document.getElementById('outstandingBalance').value;
+            const otherFacilities = document.getElementById('otherFacilities').value;
+
+            const response = await fetch('/create-entry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bankID, accountNo, nameOfBorrower, dateOfSanctionRenewal, sanctionedAmount, outstandingBalance, otherFacilities
+                })
+            });
+
+            const result = await response.text();
+            alert(result);
+        });
+
+        document.getElementById('addQueryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const accountNoObservation = document.getElementById('accountNoObservation').value;
+            const query = document.getElementById('query').value;
+            const details = document.getElementById('details').value;
+
+            const response = await fetch('/add-query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accountNo: accountNoObservation, query, details })
+            });
+
+            const result = await response.text();
+            alert(result);
+        });
+
+        document.getElementById('getDetailsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const accountNoToFetch = document.getElementById('accountNoToFetch').value;
+
+            const response = await fetch(`/get-details?accountNo=${accountNoToFetch}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+            const detailsOutput = document.getElementById('detailsOutput');
+            detailsOutput.innerHTML = ''; // Clear previous output
+
+            if (result.length > 0) {
+                result.forEach(entry => {
+                    detailsOutput.innerHTML += `
+                        <div class="card mt-2">
+                            <div class="card-body">
+                                <h5 class="card-title">Account No: ${entry.accountNo}</h5>
+                                <p class="card-text"><strong>Query:</strong> ${entry.query}</p>
+                                <p class="card-text"><strong>Details:</strong> ${entry.details}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                detailsOutput.innerHTML = '<p>No queries found for this account number.</p>';
+            }
+        });
+    </script>
+    <footer class="text-center mt-5">
+        <p class="text-muted">&copy; 2024 Bart. All rights reserved.</p>
+    </footer>
+</body>
+</html>
